@@ -6,7 +6,7 @@ from docx.enum.table import WD_ALIGN_VERTICAL, WD_ALIGN_VERTICAL
 
 
 # Import 'dados.csv' and transform it into a DataFrame
-alteracao = pd.read_csv('dados.csv', usecols=["Mat",'Dia da Alteração',
+alteracao = pd.read_csv('alteracao.csv', usecols=["Mat",'Dia da Alteração',
                                                'Entrada 01','Saída Intervalo 01',
                                                'Entrada Intervalo 01','Saída 01',
                                                'Entrada 02','Saída 02',
@@ -14,7 +14,7 @@ alteracao = pd.read_csv('dados.csv', usecols=["Mat",'Dia da Alteração',
 alteracao.fillna('--', inplace=True)
 
 # Import 'base.csv' and transform it into a DataFrame
-homologado = pd.read_csv('base.csv', usecols=["Mat", "Nome", "Sala 2ª à 6ª feira",
+homologado = pd.read_csv('homologado.csv', usecols=["Mat", "Nome", "Sala 2ª à 6ª feira",
                                                "PPM 2ª feira", "HTPC 3ª feira", "AP", "HL", "HLE",
                                                "Horas Compensadas", "C.H. Semanal"], sep=",")
 homologado.fillna('--', inplace=True)
