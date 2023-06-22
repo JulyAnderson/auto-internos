@@ -23,6 +23,21 @@ homologado.fillna('--', inplace=True)
 matriculas = alteracao.loc[(alteracao['FEZ CARGA SUPLEMENTAR NESTE DIA?'] != 'Sim') &
                            (alteracao['Mat'].isin(homologado['Mat'])), 'Mat'].unique()
 
+print("""
+____________________________________________________________________________________
+Bem-vindo ao gerador de Internos de Alteração de Horário Docentes da Escola Modesto.
+------------------------------------------------------------------------------------
+
+Antes de seguir com o programa, confira as etapas:
+
+1- Download da planilha de horários alterados, do GoogleDrive, no formato csv, o arquivo deve se chamar 'alteracao';
+2- Download da planilha de horários homologados, do GoogleDrive, no formato csv, o arquivo deve se chamar 'homologado';
+3- O programa deve estar na mesma pasta dos arquivos baixados anteriormente;
+4- Nesta pasta deve haver uma outra pasta chamada internos, que receberá os internos novos.
+
+
+""")
+
 
 mes_pagamento = input("Informe a qual mês esse pagamento é referente. Exemplo: junho-2023= ")
 numero = int(input("Digite o número do Primeiro Interno. Exemplo: 93= "))
@@ -48,7 +63,7 @@ for matricula in matriculas:
 
     numero_interno = interno.add_paragraph()
     numero_interno.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-    numero_interno_run = numero_interno.add_run(f'Interno nº {numero} /2023')
+    numero_interno_run = numero_interno.add_run(f'Interno nº {numero}/ 2023')
     numero_interno_run.bold = True
     numero_interno_run.font.size = Pt(12)
     interno.add_paragraph()
@@ -56,7 +71,7 @@ for matricula in matriculas:
 
     data_interno = interno.add_paragraph()
     data_interno.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-    data_interno_run = data_interno.add_run(f'São José do Rio Preto,{data_local}.')
+    data_interno_run = data_interno.add_run(f'São José do Rio Preto, {data_local}.')
     data_interno_run.font.size = Pt(12)
     interno.add_paragraph()
     interno.add_paragraph()
@@ -118,6 +133,7 @@ Horário Homologado: """)
 
     # Filtra as interações para a matricula atual
     alteracoes_filtradas = alteracao[alteracao['Mat'] == matricula]
+    alteracoes_filtradas = alteracoes_filtradas[alteracoes_filtradas['FEZ CARGA SUPLEMENTAR NESTE DIA?'] != 'Sim']
     colunas_desejadas = ['Dia da Alteração',
                         'Entrada 01',
                         'Saída Intervalo 01',
@@ -172,3 +188,16 @@ Horário Homologado: """)
     interno.save(caminho_pasta + f'Interno nº{numero}-2023 - Alteração de horário de {homologado_filtrado.iloc[0]["Nome"]}-{mes_pagamento}.docx')
 
     numero += 1
+
+
+print("""
+
+PROCESSO ENCERRADO, TODOS OS INTERNOS FORAM GERADOS.
+
+  #######  #######   ########
+  #     #  #     #   #
+  #     #  #  ###    #   ####
+  #     #  #     #   #      #
+  #######  ######    ########
+                            #
+""")
