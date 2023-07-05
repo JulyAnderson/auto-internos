@@ -3,14 +3,18 @@ from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.shared import Pt
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_ALIGN_VERTICAL
-
+from datetime import datetime, time, date
 
 # Import 'dados.csv' and transform it into a DataFrame
-alteracao = pd.read_csv('alteracao.csv', usecols=["Mat",'Dia da Alteração',
-                                               'Entrada 01','Saída Intervalo 01',
-                                               'Entrada Intervalo 01','Saída 01',
-                                               'Entrada 02','Saída 02',
-                                               'FEZ CARGA SUPLEMENTAR NESTE DIA?'], sep=',')
+alteracao = pd.read_csv('alteracao.csv', usecols=["MATRICULA",'Escolha uma opção','DIA DA ALTERAÇÃO',
+                                               'ENTRADA','SAÍDA PARA ALMOÇO',
+                                               'ENTRADA APÓS O ALMOÇO','SAÍDA',
+                                               'ENTRADA NOTURNA','SAÍDA NOTURNA'], sep=',')
+
+alteracao.columns = ["Mat", "OPCAO", "Dia da Alteração", "Entrada 01", "Saída Intervalo 01",
+                     "Entrada Intervalo 01", "Saída 01", "Entrada 02", "Saída 02"]
+
+
 alteracao.fillna('--', inplace=True)
 
 # Import 'base.csv' and transform it into a DataFrame
@@ -20,7 +24,7 @@ homologado = pd.read_csv('homologado.csv', usecols=["Mat", "Nome", "Sala 2ª à 
 homologado.fillna('--', inplace=True)
 
 # Filtrar matrículas das alterações em que não houve cargas suplementares
-matriculas = alteracao.loc[(alteracao['FEZ CARGA SUPLEMENTAR NESTE DIA?'] != 'Sim') &
+matriculas = alteracao.loc[(alteracao['OPCAO'] == 'ALTERAÇÃO DE HORÁRIO') &
                            (alteracao['Mat'].isin(homologado['Mat'])), 'Mat'].unique()
 
 print("""
@@ -38,10 +42,35 @@ Antes de seguir com o programa, confira as etapas:
 
 """)
 
-
-mes_pagamento = input("Informe a qual mês esse pagamento é referente. Exemplo: junho-2023= ")
+mes_pagamento = int(input("""Informe a qual mês esse pagamento é referente. Exemplo - 6
+1:janeiro,
+2:fevereiro,
+3:março,
+4:abril,
+5:maio,
+6:junho,
+7:julho,
+8:agosto,
+9:setembro,
+10:outubro,
+11:novembro,
+12:dezembro: """))
+dict_mes = {
+        1: 'janeiro',
+        2: 'fevereiro',
+        3: 'março',
+        4: 'abril',
+        5: 'maio',
+        6: 'junho',
+        7: 'julho',
+        8: 'agosto',
+        9: 'setembro',
+        10: 'outubro',
+        11: 'novembro',
+        12: 'dezembro'}
+ano_atual = datetime.now().year
 numero = int(input("Digite o número do Primeiro Interno. Exemplo: 93= "))
-data_local = input('Digite a data de envio do Interno. Exemplo: 01 de junho de 2023= ')
+dia_de_envio = input('Digite o  dia de envio do Interno. Exemplo: 01= ')
 responsavel_assinatura = input("""Quem é o responsável pela assinatura dos internos? Selecione uma das opções:
 1- Silvia Elaine
 2- Anelisa Luciene
@@ -71,7 +100,7 @@ for matricula in matriculas:
 
     data_interno = interno.add_paragraph()
     data_interno.alignment = WD_PARAGRAPH_ALIGNMENT.RIGHT
-    data_interno_run = data_interno.add_run(f'São José do Rio Preto, {data_local}.')
+    data_interno_run = data_interno.add_run(f'São José do Rio Preto, {dia_de_envio} de {dict_mes[(mes_pagamento % 12) + 1]} de {date.today().year}.')
     data_interno_run.font.size = Pt(12)
     interno.add_paragraph()
     interno.add_paragraph()
@@ -131,9 +160,9 @@ Horário Homologado: """)
     # Adiciona um paragráfo como separador 
     interno.add_paragraph()
 
-    # Filtra as interações para a matricula atual
+    # Filtra as interações para a matrícula atual
     alteracoes_filtradas = alteracao[alteracao['Mat'] == matricula]
-    alteracoes_filtradas = alteracoes_filtradas[alteracoes_filtradas['FEZ CARGA SUPLEMENTAR NESTE DIA?'] != 'Sim']
+    alteracoes_filtradas = alteracoes_filtradas[alteracoes_filtradas['OPCAO'] == 'ALTERAÇÃO DE HORÁRIO']
     colunas_desejadas = ['Dia da Alteração',
                         'Entrada 01',
                         'Saída Intervalo 01',
@@ -141,7 +170,10 @@ Horário Homologado: """)
                         'Saída 01',
                         'Entrada 02',
                         'Saída 02']
+    alteracoes_filtradas['Dia da Alteração'] = pd.to_datetime(alteracoes_filtradas['Dia da Alteração'], format='%d/%m/%Y')
+    alteracoes_filtradas = alteracoes_filtradas[alteracoes_filtradas['Dia da Alteração'].dt.month == mes_pagamento]
     alteracoes_filtradas = alteracoes_filtradas.loc[:, colunas_desejadas]
+
 
     horario_alterado_interno = interno.add_paragraph()
     horario_alterado_interno.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
@@ -171,7 +203,17 @@ Horário Homologado: """)
     for row in range(alteracoes_filtradas.shape[0]):
         for col in range(alteracoes_filtradas.shape[1]):
             cell = table_alteracoes.cell(row + 1, col)
-            cell.text = str(alteracoes_filtradas.values[row, col])
+            value = alteracoes_filtradas.values[row, col]
+
+            # Format dates to display only day and month
+            if isinstance(value, datetime):
+                value = value.strftime('%d/%m')
+
+            # Format times to display as hh:mm
+            if isinstance(value, time):
+                value = value.strftime('%H:%M')
+
+            cell.text = str(value)
             cell.paragraphs[0].paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
     # Add a paragraph for the responsible person
@@ -185,7 +227,7 @@ Horário Homologado: """)
 
 
     # Salva o documento com nome único 
-    interno.save(caminho_pasta + f'Interno nº{numero}-2023 - Alteração de horário de {homologado_filtrado.iloc[0]["Nome"]}-{mes_pagamento}.docx')
+    interno.save(caminho_pasta + f'Interno nº{numero}-2023 - Alteração de horário de {homologado_filtrado.iloc[0]["Nome"]}-{dict_mes[mes_pagamento]}{ano_atual}.docx')
 
     numero += 1
 
